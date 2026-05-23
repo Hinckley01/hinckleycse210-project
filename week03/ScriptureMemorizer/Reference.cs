@@ -1,35 +1,36 @@
-public class Reference
+namespace ScriptureMemorizer
 {
-    private string _book;
-    private int _chapter;
-    private int _verse;
-    private int _endVerse;
-
-    public Reference(string book, int chapter, int verse)
+    public class Reference
     {
-        _book = book;
-        _chapter = chapter;
-        _verse = verse;
-        _endVerse = verse;
-    }
+        private string _book;
+        private int _chapter;
+        private int _startVerse;
+        private int _endVerse;
 
-    public Reference(string book, int chapter, int startVerse, int endVerse)
-    {
-        _book = book;
-        _chapter = chapter;
-        _verse = startVerse;
-        _endVerse = endVerse;
-    }
-
-    public string GetDisplayText()
-    {
-        if (_verse == _endVerse)
+        // Single verse: "John 3:16"
+        public Reference(string book, int chapter, int verse)
         {
-            return $"{_book} {_chapter}:{_verse}";
+            _book = book;
+            _chapter = chapter;
+            _startVerse = verse;
+            _endVerse = -1;
         }
-        else
+
+        // Verse range: "Proverbs 3:5-6"
+        public Reference(string book, int chapter, int startVerse, int endVerse)
         {
-            return $"{_book} {_chapter}:{_verse}-{_endVerse}";
+            _book = book;
+            _chapter = chapter;
+            _startVerse = startVerse;
+            _endVerse = endVerse;
+        }
+
+        public override string ToString()
+        {
+            if (_endVerse == -1)
+                return $"{_book} {_chapter}:{_startVerse}";
+            else
+                return $"{_book} {_chapter}:{_startVerse}-{_endVerse}";
         }
     }
 }

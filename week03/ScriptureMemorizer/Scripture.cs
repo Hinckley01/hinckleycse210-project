@@ -2,48 +2,54 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class Scripture
+namespace ScriptureMemorizer
 {
-    private Reference _reference;
-    private List<Word> _words;
-
-    public Scripture(Reference reference, string text)
+    public class Scripture
     {
-        _reference = reference;
-        _words = text.Split(' ')
-                     .Select(w => new Word(w))
-                     .ToList();
-    }
+        private Reference _reference;
+        private List<Word> _words;
+        private Random _random = new Random();
 
-    public void HideRandomWords(int count)
-    {
-        Random random = new Random();
-
-        List<int> visibleIndices = _words
-            .Select((word, index) => new { word, index })
-            .Where(pair => !pair.word.IsHidden())
-            .Select(pair => pair.index)
-            .ToList();
-
-        int wordsToHide = Math.Min(count, visibleIndices.Count);
-
-        for (int i = 0; i < wordsToHide; i++)
+        public Scripture(Reference reference, string text)
         {
-            int randomPosition = random.Next(visibleIndices.Count);
-            _words[visibleIndices[randomPosition]].Hide();
-            visibleIndices.RemoveAt(randomPosition);
+            _reference = reference;
+            // Split on spaces and convert each word to a Word object
+            _words = text.Split(' ')
+                         .Where(w => w.Length > 0)
+                         .Select(w => new Word(w))
+                         .ToList();
         }
-    }
 
-    public bool IsCompletelyHidden()
-    {
-        return _words.All(w => w.IsHidden());
-    }
+        // Hides 'count' random words that are NOT already hidden (stretch goal)
+        public void HideRandomWords(int count = 3)
+        {
+            // Get only the words that are still visible
+            List<Word> visibleWords = _words.Where(w => !w.IsHidden()).ToList();
 
-    public string GetDisplayText()
-    {
-        string referenceText = _reference.GetDisplayText();
-        string scriptureText = string.Join(" ", _words.Select(w => w.GetDisplayText()));
-        return $"{referenceText} {scriptureText}";
+            if (visibleWords.Count == 0)
+                return;
+
+            // Don't try to hide more words than are visible
+            int hideCount = Math.Min(count, visibleWords.Count);
+
+            // Pick random visible words and hide them
+            for (int i = 0; i < hideCount; i++)
+            {
+                int index = _random.Next(visibleWords.Count);
+                visibleWords[index].Hide();
+                visibleWords.RemoveAt(index); // Avoid picking the same word twice this round
+            }
+        }
+
+        public bool AllWordsHidden()
+        {
+            return _words.All(w => w.IsHidden());
+        }
+
+        public override string ToString()
+        {
+            string wordDisplay = string.Join(" ", _words);
+            return $"{_reference}\n{wordDisplay}";
+        }
     }
 }

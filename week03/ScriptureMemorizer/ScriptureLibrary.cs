@@ -1,67 +1,87 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
-// Exceeds Requirements: Instead of working with a single hardcoded scripture,
-// this class manages a library of scriptures and can select one at random.
-// This gives users variety and makes the program more useful for general memorization.
-public class ScriptureLibrary
+namespace ScriptureMemorizer
 {
-    private List<Scripture> _scriptures;
-    private Random _random;
-
-    public ScriptureLibrary()
+    // EXCEEDS REQUIREMENTS:
+    // Loads a library of scriptures from a file and picks one at random.
+    public class ScriptureLibrary
     {
-        _scriptures = new List<Scripture>();
-        _random = new Random();
-        LoadScriptures();
-    }
+        private List<Scripture> _scriptures = new List<Scripture>();
+        private Random _random = new Random();
 
-    private void LoadScriptures()
-    {
-        _scriptures.Add(new Scripture(
-            new Reference("John", 3, 16),
-            "For God so loved the world that he gave his only begotten Son that whosoever believeth in him should not perish but have everlasting life."
-        ));
+        public ScriptureLibrary(string filePath)
+        {
+            LoadFromFile(filePath);
+        }
 
-        _scriptures.Add(new Scripture(
-            new Reference("Proverbs", 3, 5, 6),
-            "Trust in the Lord with all thine heart and lean not unto thine own understanding In all thy ways acknowledge him and he shall direct thy paths."
-        ));
+        // File format per line: Book Chapter:Verse Text
+        // Example: John 3:16 For God so loved the world...
+        // Range example: Proverbs 3:5-6 Trust in the Lord with all your heart...
+        private void LoadFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[Warning] Scripture file not found: {filePath}");
+                return;
+            }
 
-        _scriptures.Add(new Scripture(
-            new Reference("Psalm", 23, 1, 3),
-            "The Lord is my shepherd I shall not want He maketh me to lie down in green pastures he leadeth me beside the still waters He restoreth my soul."
-        ));
+            foreach (string line in File.ReadAllLines(filePath))
+            {
+                string trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
 
-        _scriptures.Add(new Scripture(
-            new Reference("Romans", 8, 28),
-            "And we know that all things work together for good to them that love God to them who are the called according to his purpose."
-        ));
+                // Format: Book Chapter:Verse(s) rest-is-text
+                // We find the reference (first two tokens) then the text
+                string[] parts = trimmed.Split(' ');
+                if (parts.Length < 3) continue;
 
-        _scriptures.Add(new Scripture(
-            new Reference("Philippians", 4, 13),
-            "I can do all things through Christ which strengtheneth me."
-        ));
+                string book = parts[0];
+                string verseInfo = parts[1]; // e.g. "3:16" or "3:5-6"
+                string text = string.Join(" ", parts, 2, parts.Length - 2);
 
-        _scriptures.Add(new Scripture(
-            new Reference("Joshua", 1, 9),
-            "Be strong and of a good courage be not afraid neither be thou dismayed for the Lord thy God is with thee whithersoever thou goest."
-        ));
+                Reference reference = ParseReference(book, verseInfo);
+                if (reference != null)
+                    _scriptures.Add(new Scripture(reference, text));
+            }
+        }
 
-        _scriptures.Add(new Scripture(
-            new Reference("2 Timothy", 3, 16, 17),
-            "All scripture is given by inspiration of God and is profitable for doctrine for reproof for correction for instruction in righteousness That the man of God may be perfect thoroughly furnished unto all good works."
-        ));
-    }
+        private Reference ParseReference(string book, string verseInfo)
+        {
+            try
+            {
+                // verseInfo looks like "3:16" or "3:5-6"
+                string[] chapterVerse = verseInfo.Split(':');
+                int chapter = int.Parse(chapterVerse[0]);
+                string versePart = chapterVerse[1];
 
-    public Scripture GetRandomScripture()
-    {
-        int index = _random.Next(_scriptures.Count);
-        return _scriptures[index];
-    }
+                if (versePart.Contains('-'))
+                {
+                    string[] verses = versePart.Split('-');
+                    return new Reference(book, chapter, int.Parse(verses[0]), int.Parse(verses[1]));
+                }
+                else
+                {
+                    return new Reference(book, chapter, int.Parse(versePart));
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
-    public int Count()
-    {
-        return _scriptures.Count;
+        public Scripture GetRandomScripture()
+        {
+            if (_scriptures.Count == 0)
+                return null;
+            return _scriptures[_random.Next(_scriptures.Count)];
+        }
+
+        public bool HasScriptures()
+        {
+            return _scriptures.Count > 0;
+        }
     }
 }

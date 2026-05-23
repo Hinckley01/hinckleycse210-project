@@ -1,78 +1,62 @@
-// Scripture Memorizer Program
-// W03 Project
+// Scripture Memorizer - W03 Project
 //
-// ============================================================
-// HOW THIS PROGRAM EXCEEDS CORE REQUIREMENTS:
-//
-// 1. Scripture Library (ScriptureLibrary class):
-//    Rather than working with a single hardcoded scripture, the program
-//    maintains a library of 7 scriptures spanning single and multi-verse
-//    references. Each time the program runs, a random scripture is selected,
-//    giving the user variety and encouraging broader scripture study.
-//
-// 2. Only hides visible words (stretch challenge):
-//    The HideRandomWords method in the Scripture class tracks which words
-//    are already hidden and only selects from visible words. This means
-//    every round of pressing Enter is guaranteed to hide new words, with
-//    no wasted turns.
-//
-// 3. "New Scripture" option:
-//    Rather than quitting after one scripture, the user can type "new"
-//    to load a fresh random scripture from the library without restarting
-//    the program. This encourages continued practice.
-// ============================================================
+// EXCEEDS REQUIREMENTS:
+// 1. Loads a library of scriptures from a file (scriptures.txt) and picks one at random.
+// 2. When selecting words to hide, only non-hidden words are selected (stretch challenge).
+// 3. If no scripture file is found, a default hardcoded scripture is used as fallback.
 
 using System;
+using System.IO;
 
-class Program
+namespace ScriptureMemorizer
 {
-    static void Main(string[] args)
+    class Program
     {
-        ScriptureLibrary library = new ScriptureLibrary();
-        bool keepRunning = true;
-
-        while (keepRunning)
+        static void Main(string[] args)
         {
-            Scripture scripture = library.GetRandomScripture();
+            Scripture scripture = LoadScripture();
 
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine(scripture.GetDisplayText());
+                Console.WriteLine(scripture.ToString());
                 Console.WriteLine();
 
-                if (scripture.IsCompletelyHidden())
+                if (scripture.AllWordsHidden())
                 {
-                    Console.WriteLine("Well done! All words are hidden.");
-                    Console.WriteLine("Press Enter to try a new scripture or type 'quit' to exit.");
-                    string finalInput = (Console.ReadLine() ?? "").Trim().ToLower();
-                    if (finalInput == "quit")
-                    {
-                        keepRunning = false;
-                    }
+                    Console.WriteLine("All words are hidden. Great job memorizing!");
                     break;
                 }
 
-                Console.Write("Press Enter to continue, type 'new' for a new scripture, or 'quit' to exit: ");
-                string input = (Console.ReadLine() ?? "").Trim().ToLower();
+                Console.Write("Press Enter to hide more words, or type 'quit' to exit: ");
+                string input = Console.ReadLine();
 
-                if (input == "quit")
-                {
-                    keepRunning = false;
+                if (input?.Trim().ToLower() == "quit")
                     break;
-                }
-                else if (input == "new")
-                {
-                    break;
-                }
-                else
-                {
-                    scripture.HideRandomWords(3);
-                }
+
+                scripture.HideRandomWords(3);
             }
         }
 
-        Console.Clear();
-        Console.WriteLine("Goodbye! Keep memorizing.");
+        static Scripture LoadScripture()
+        {
+            string filePath = "scriptures.txt";
+
+            // Try to load from file first (exceeds requirements)
+            if (File.Exists(filePath))
+            {
+                ScriptureLibrary library = new ScriptureLibrary(filePath);
+                if (library.HasScriptures())
+                {
+                    Scripture s = library.GetRandomScripture();
+                    if (s != null) return s;
+                }
+            }
+
+            // Fallback: hardcoded default scripture
+            Reference reference = new Reference("John", 3, 16);
+            string text = "For God so loved the world that he gave his only begotten Son that whosoever believeth in him should not perish but have everlasting life";
+            return new Scripture(reference, text);
+        }
     }
 }
